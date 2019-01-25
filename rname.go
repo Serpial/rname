@@ -7,9 +7,7 @@ import (
 )
 
 func main() {
-	var pathToSecondArg string
 	arguments := os.Args // type []string
-	// Check if file or folder
 
 	switch len(arguments){
 	case 2:
@@ -17,31 +15,33 @@ func main() {
 			printHelp()
 			return
 		}
-
 	case 3:
-		if !strings.Contains(arguments[2], "/") {
-			pathToSecondArg = getLocation(arguments)
-			e := os.Rename(arguments[1], pathToSecondArg+arguments[2])
-			if e != nil {
-				fmt.Println(e)
+		if isFile(arguments) == 1 {
+			if !strings.Contains(arguments[2], "/") {
+				doRename(arguments)
+			} else {
+				fmt.Println("Invalid Argument: This program assumes" +
+					" the path.")
 			}
 		} else {
-			fmt.Println("Invalid Argument: This program assumes" +
-				" the path.")
+			basicError()
 		}
 	case 4:
-		if arguments[1] == "-f" {
-			fmt.Println ("Some folder-y stuff")
+		if isFile(arguments) == 2 {
+			if arguments[1] == "-f" {
+				fmt.Println ("Some folder-y stuff")
+			}
+		} else {
+			basicError()
 		}
 	default:
-		fmt.Println("Invalid Argument" +
-			" Check Usage via \"rname -h\"")
+		basicError()
 	}
 }
 
-func getLocation([]string arguments) string {
-	if strings.Contains(arguments[1],"/") {
-		str := arguments [1]
+func getLocation(arguments []string) string {
+	if strings.Contains(arguments[len(arguments)-2],"/") {
+		str := arguments[len(arguments)-2]
 		s := strings.Split(str, "/")
 		return str[:len(str) - len(s[len(s)-1])]
 	} else {
@@ -55,4 +55,33 @@ func printHelp() {
 		"Arguments:\n\t" +
 		"-f\t\tchange the name of a folder\n\t" +
 		"-h, --help\tshows usage and arguments\n\t")
+}
+
+func isFile (arguments []string) byte {
+	fi, err := os.Stat(getLocation(arguments)+arguments[len(arguments)-2])
+    if err != nil {
+        fmt.Println(err)
+        return 0
+    }
+	
+    switch mode := fi.Mode(); {
+	case mode.IsRegular():
+		return 1
+    case mode.IsDir():
+		return 2
+    }
+	return 0
+}
+
+func basicError() {
+	fmt.Println("Invalid Argument:" +
+		" Check Usage via \"rname -h\"")
+}
+
+func doRename(arguments []string) {
+	newNameAndLoc := getLocation(arguments)+arguments[len(arguments)-1]
+	e := os.Rename(arguments[len(arguments)-2], newNameAndLoc)
+	if e != nil {
+		fmt.Println(e)
+	}
 }
