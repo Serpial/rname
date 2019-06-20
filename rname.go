@@ -6,11 +6,16 @@ import (
 	"strings"
 )
 
+/*
+* The main function is just the skeleton of what the program has to do.
+* First it checks the arguments that the user has entered, then it 
+* renames the file based on those arguments
+*/
 func main() {
 	arguments := os.Args
-
+	
 	if checkInput(arguments) == 0 {
-		fmt.Println("Success")
+		renameFile(arguments)
 	}
 }
 
@@ -53,7 +58,7 @@ func checkInput(arguments []string) int {
 	if sanitizeNewFileName(arguments)==1 { return 1	}
 
 	// Check if the new name already exists
-	valid = checkIfValidFile(arguments[2])
+	valid = checkIfValidFile(getLocation(arguments[1])+arguments[2])
 	if valid<2 {
 		if valid==0 {
 			fmt.Println("Error: New file name already exists in this directory")
@@ -66,6 +71,23 @@ func checkInput(arguments []string) int {
 	return 0
 }
 
+
+/*
+* Gets the file path of the file the user wishes to change
+*/
+func getLocation(originalFile string) string {
+	ind := strings.LastIndex(originalFile, "/");
+	if  ind != -1{
+		// Return the whole directory path
+		return originalFile[:ind+1]
+	} else {
+		// If the original file location does not contain a "/" then assume
+		//    that it is in the current directory
+		return "./"
+	}
+}
+
+
 /*
 * Uses whitelisting to restrict the characters the user can use 
 */
@@ -74,10 +96,12 @@ func sanitizeNewFileName(arguments []string) int {
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" +
 		",.@#[]{}¬`!£$%^()_-+= " 
 
+	// I read this was a standard character limit for linux file
 	if len(arguments[2])>255 {
 		fmt.Println("Error: New name is too large")
 	}
 
+	// Compare each character against the whitelist to see if each letter is on it
 	for _, el := range arguments[2] {
 		if !(strings.Contains(whiteList, string(el))) {
 			fmt.Println("Error: New name contains illicit character" +
@@ -87,6 +111,7 @@ func sanitizeNewFileName(arguments []string) int {
 	}
 	return 0
 }
+
 
 /*
 * To be used to check if the file is a file and if it already exists
@@ -104,6 +129,10 @@ func checkIfValidFile(fileString string) int {
 	return 0
 }
 
+
+/*
+* This prints all of the stuff I want printed in the help section
+*/
 func printHelpAndUsage() {
 	fmt.Println("Basic program that allowes the renaming" +
 		" of an individual file")
@@ -111,4 +140,16 @@ func printHelpAndUsage() {
 		"\n\t e.g. rname ~/Documents/file fileTwo")
 	fmt.Println("\nOptions:\n\t--help or -h\tDisplay usage" +
 		" and options")
+}
+
+
+/*
+* This function is the function that actually renames the file and gives out
+* an error if it gets any
+*/
+func renameFile(arguments []string) {
+	e := os.Rename(arguments[1], getLocation(arguments[1])+ arguments[2])
+	if e != nil {
+		fmt.Println(e)
+	}
 }
